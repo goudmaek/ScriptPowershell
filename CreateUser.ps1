@@ -42,11 +42,12 @@ $Alias2=$i.alias2
 $Alias3=$i.alias3
 $Alias4=$i.alias4
 $ProxyAddresses= $Email
-if ($ALias1 -ne "") { $ProxyAddresses+= ' '+','+"smtp:"+"$Alias1" }
-if ($ALias2 -ne "") { $ProxyAddresses+= ' '+','+"smtp:"+"$Alias2" }
-if ($ALias3 -ne "") { $ProxyAddresses+= ' '+','+"smtp:"+"$Alias3" }
-if ($ALias4 -ne "") { $ProxyAddresses+= ' '+','+"smtp:"+"$Alias4" }
+if ($ALias1 -ne "") { $ProxyAddresses+= "," + "smtp:"+"$Alias1" }
+if ($ALias2 -ne "") { $ProxyAddresses+= "," + "smtp:"+"$Alias2" }
+if ($ALias3 -ne "") { $ProxyAddresses+= "," + "smtp:"+"$Alias3" }
+if ($ALias4 -ne "") { $ProxyAddresses+= "," + "smtp:"+"$Alias4" }
 $global:proxyaddresses=@($ProxyAddresses)
+write-host $global:proxyaddresses
 }
 
 Function UPN {
@@ -73,7 +74,34 @@ switch  ($service)
     }
     Add-ADGroupmember -identity $Group -Members $SamaccountName
 }
-    
+
+function CreateFolder {
+    $server="lab-dc01.labo.local"
+    $SharedFolder="Homes"
+    $Global:SharesPath="\\$server" + "\$SharedFolder" + "\$SamAccountName"
+    write-host $SamAccountName and $SharesPath
+    $TestFolder=test-path $SharesPath
+    if($TestFolder -eq $false) {
+    New-item -path $sharesPath -ItemType directory
+    write-Output "Création du dossier personnel $SamAccountName de $DisplayName"
+    setacl
+
+    }
+    else { 
+        write-host "le dossier existe"
+        }
+}
+
+function SetAcl {
+    $ACL = Get-ACL -Path $Global:SharesPath
+    $identity = $SamAccountName
+    $filesystemRights = "Modify","delete","DeleteSubdirectoriesAndFiles"
+    $type = "allow"
+    $filesystemAccessRuleArgumentList = $identity, $filesystemRights, $type
+    $filesystemAccessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $filesystemAccessRuleArgumentList 
+    $Acl.SetAccessRule($filesystemAccessRule)
+    set-acl -path "$sharespath" -AclObject $ACL
+    }
 
 Function CreateAdAccount {
 #creation du compte utilisateur
@@ -83,7 +111,7 @@ New-aduser -SamAccountName $samaccountName -UserPrincipalName $global:userprinci
 -title $title -EmailAddress $i.email -ChangePasswordAtLogon $true -Enabled $true -AccountPassword $password `
  -city $i.site -Company $i.domaine -Country FR  -Department $department -MobilePhone $i.Mobile -OfficePhone $i.Téléphone -office $i.site `
   -OtherAttributes @{'proxyaddresses'=$global:proxyaddresses} -ErrorAction stop 
-
+  createfolder
 }
 catch {
     #en cas d'erreur, on vérifie si le compte existe déjà. 
