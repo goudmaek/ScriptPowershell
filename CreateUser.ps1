@@ -1,7 +1,13 @@
-﻿#Ce script récupère les données dans un fichier CSV. Le fichier CSV doit contenir les colonnes suivantes:
-# Nom	Prénom	Site	Fonction	Département	Téléphone	Mobile	Domaine	email	alias1	alias2	alias3	alias4
-
+﻿function help {
+write-host "Ce script récupère les données dans un fichier CSV. ` 
+Le fichier CSV doit contenir les colonnes suivantes: `  
+Nom	Prénom	Site	Fonction	Département	Téléphone	Mobile	Domaine	email	alias1	alias2	alias3	alias4 ` 
+les champs Nom, prénom, site, département, domaine et email sont obligatoires ` 
+ce script accepte les arguments start ou help. Par défaut, il affiche l'aide. "
+}
 Function main {
+#un fichier log différent est généré à chaque exécution du script. 
+start-transcript -path "c:\temp\$(get-date -f yy-mm-dd)-CreateUser.txt"
 $Source=SelectFichierSource
 
 #Import du fichier sources et boucle sur le contenu du tableau et on assigne les colonnes aux variables qui seront utilisées. 
@@ -24,6 +30,7 @@ AliasMail
 CreateAdAccount
 AddGroup
     }
+Stop-Transcript
     }
 function SelectFichierSource {
 #fonction qui Ouvre l'explorateur windows pour permettre à l'utilisateur de sélectionner le fichier source.
@@ -123,9 +130,13 @@ catch {
 }
 
 #Enregistre les sorties du script et les enregistre dans un fichier texte. 
-#un fichier log différent est généré à chaque exécution du script. 
-start-transcript -path "c:\temp\$(get-date -f yy-mm-dd)-CreateUser.txt"
 
-main 
+$args[0]
+if ($args -eq "start"){
+main
+}
+else {
+help
+}
 
-Stop-Transcript
+
